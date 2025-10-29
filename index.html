@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Obrolan</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="app-container">
+            <!-- Login Section -->
+            <div id="login-section" class="section">
+                <h1>Aplikasi Obrolan</h1>
+                <p>Silakan login untuk mulai mengobrol</p>
+                <button id="login-button" class="btn">Login dengan Google</button>
+            </div>
+
+            <!-- Chat Section -->
+            <div id="chat-section" class="section hidden">
+                <div class="sidebar">
+                    <div class="user-profile">
+                        <img id="user-avatar" src="" alt="Avatar">
+                        <div id="user-name">Nama Pengguna</div>
+                        <button id="logout-button" class="btn btn-small">Logout</button>
+                    </div>
+                    <div class="user-list-container">
+                        <h3>Daftar Pengguna</h3>
+                        <div id="user-list" class="user-list">
+                            <!-- User list will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <img id="receiver-avatar" src="" alt="Avatar" class="avatar">
+                        <div id="receiver-name">Pilih pengguna untuk memulai obrolan</div>
+                        <div id="typing-indicator" class="typing-indicator hidden">sedang mengetik...</div>
+                    </div>
+                    <div id="messages-container" class="messages-container">
+                        <!-- Messages will be populated here -->
+                    </div>
+                    <div class="message-input-container">
+                        <input type="text" id="message-input" placeholder="Ketik pesan..." disabled>
+                        <button id="send-button" class="btn" disabled>Kirim</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
