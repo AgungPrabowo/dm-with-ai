@@ -134,6 +134,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    overflow-y: auto;
+    flex-grow: 1;
+    display: block !important; /* Memastikan daftar pengguna selalu ditampilkan */
+    max-height: 70vh; /* Membatasi tinggi maksimum */
 }
 
 .user-item {
@@ -143,6 +147,13 @@ body {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s;
+}
+
+.no-user-item {
+    padding: 15px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
 }
 
 .user-item:hover {
@@ -259,19 +270,23 @@ body {
 }
 
 .message-input-container {
-    padding: 15px;
     display: flex;
+    padding: 10px;
     border-top: 1px solid #eee;
+    width: 100%;
+    position: relative;
+    bottom: 0;
 }
 
 #message-input {
-    flex: 1;
-    padding: 10px 15px;
+    flex-grow: 1;
+    padding: 10px;
     border: 1px solid #ddd;
-    border-radius: 25px;
-    font-size: 16px;
-    outline: none;
+    border-radius: 5px;
     margin-right: 10px;
+    font-size: 16px;
+    z-index: 10; /* Memastikan input berada di atas elemen lain */
+    pointer-events: auto !important; /* Memastikan input dapat menerima event */
 }
 
 #message-input:focus {
