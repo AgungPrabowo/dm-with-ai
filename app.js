@@ -49,6 +49,31 @@ messageInput.addEventListener('keypress', (e) => {
 });
 sendButton.addEventListener('click', sendMessage);
 
+// Event listener untuk mendeteksi ketika user menutup browser/tab
+window.addEventListener('beforeunload', () => {
+    if (currentUser) {
+        updateUserOfflineStatus(currentUser.uid);
+    }
+});
+
+// Event listener untuk mendeteksi ketika user kehilangan fokus dari tab
+document.addEventListener('visibilitychange', () => {
+    if (currentUser) {
+        if (document.hidden) {
+            // Tab tidak aktif, update lastSeen
+            db.collection('users').doc(currentUser.uid).update({
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } else {
+            // Tab aktif kembali, pastikan status online
+            db.collection('users').doc(currentUser.uid).update({
+                isOnline: true,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+    }
+});
+
 // Fungsi autentikasi
 function signInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -60,6 +85,11 @@ function signInWithGoogle() {
 }
 
 function signOut() {
+    // Update status offline sebelum logout
+    if (currentUser) {
+        updateUserOfflineStatus(currentUser.uid);
+    }
+    
     auth.signOut()
         .catch(error => {
             console.error('Error during sign out:', error);
@@ -125,6 +155,18 @@ async function checkUserExists(uid) {
     }
 }
 
+// Fungsi untuk mengupdate status user menjadi offline
+function updateUserOfflineStatus(uid) {
+    if (uid) {
+        db.collection('users').doc(uid).update({
+            isOnline: false,
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(error => {
+            console.error('Error updating offline status:', error);
+        });
+    }
+}
+
 // Fungsi untuk update user di Firestore
 function updateUserInFirestore(user) {
     // Periksa apakah user sudah ada di collection
@@ -142,8 +184,10 @@ function updateUserInFirestore(user) {
             displayName: user.displayName,
             email: user.email,
             photoURL: user.photoURL,
+            isOnline: true,
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
             lastOnline: firebase.firestore.FieldValue.serverTimestamp(),
-            createdAt: exists ? undefined : firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: exists ? null : firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
     }).catch(error => {
         console.error('Error updating user in Firestore:', error);
@@ -163,8 +207,9 @@ function loadUsers() {
         usersSnapshot();
     }
     
-    // Tambahkan listener baru
+    // Tambahkan listener baru - hanya user yang online
     usersSnapshot = db.collection('users')
+        .where('isOnline', '==', true)
         .onSnapshot(snapshot => {
             // Bersihkan daftar pengguna
             userList.innerHTML = '';
@@ -195,7 +240,10 @@ function loadUsers() {
                 
                 userItem.innerHTML = `
                     <img src="${avatarUrl}" alt="Avatar" class="user-item-avatar">
-                    <div class="user-item-name">${userData.displayName || 'Pengguna'}</div>
+                    <div class="user-item-info">
+                        <div class="user-item-name">${userData.displayName || 'Pengguna'}</div>
+                        <div class="user-status online">● Online</div>
+                    </div>
                 `;
                 
                 userItem.addEventListener('click', () => selectUser(userData));
