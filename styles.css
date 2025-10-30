@@ -315,3 +315,29 @@ body {
     background-color: #f9f9f9;
     cursor: not-allowed;
 }
+
+.footer {
+    text-align: center;
+    padding: 15px;
+    margin-top: 20px;
+    background-color: #f1f1f1;
+    border-top: 1px solid #ddd;
+}
+
+.github-link {
+    color: #24292f;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.github-link:hover {
+    text-decoration: underline;
+}
+
+.github-logo {
+    width: 22px;
+    height: 22px;
+}
