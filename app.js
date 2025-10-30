@@ -104,7 +104,7 @@ auth.onAuthStateChanged(user => {
         messageInput.disabled = true;
         sendButton.disabled = true;
         receiverName.textContent = 'Pilih pengguna untuk memulai obrolan';
-        receiverAvatar.src = 'https://via.placeholder.com/150';
+        receiverAvatar.src = DEFAULT_AVATAR;
         
         // Unsubscribe dari listeners
         if (usersSnapshot) {
@@ -114,23 +114,72 @@ auth.onAuthStateChanged(user => {
     }
 });
 
+// Fungsi untuk memeriksa keberadaan user di collection 'users'
+async function checkUserExists(uid) {
+    try {
+        const userDoc = await db.collection('users').doc(uid).get();
+        return userDoc.exists;
+    } catch (error) {
+        console.error('Error checking user existence:', error);
+        return false;
+    }
+}
+
 // Fungsi untuk update user di Firestore
 function updateUserInFirestore(user) {
-    db.collection('users').doc(user.uid).set({
-        uid: user.uid,
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-        lastOnline: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    // Periksa apakah user sudah ada di collection
+    checkUserExists(user.uid).then(exists => {
+        // Jika user belum ada, tambahkan ke collection
+        if (!exists) {
+            console.log('User baru terdeteksi, menambahkan ke database:', user.displayName);
+        } else {
+            console.log('User sudah ada, memperbarui data:', user.displayName);
+        }
+        
+        // Tambahkan atau update user data
+        db.collection('users').doc(user.uid).set({
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+            lastOnline: firebase.firestore.FieldValue.serverTimestamp(),
+            createdAt: exists ? undefined : firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    }).catch(error => {
+        console.error('Error updating user in Firestore:', error);
+    });
 }
 
 // Fungsi untuk memuat daftar pengguna
 function loadUsers() {
+    // Pastikan userList ada sebelum melanjutkan
+    if (!userList) {
+        console.error('Element userList tidak ditemukan');
+        return;
+    }
+    
+    // Unsubscribe dari listener sebelumnya jika ada
+    if (usersSnapshot) {
+        usersSnapshot();
+    }
+    
+    // Tambahkan listener baru
     usersSnapshot = db.collection('users')
         .onSnapshot(snapshot => {
+            // Bersihkan daftar pengguna
             userList.innerHTML = '';
             
+            // Periksa apakah ada data
+            if (snapshot.empty) {
+                console.log('Tidak ada pengguna yang ditemukan');
+                const noUserItem = document.createElement('div');
+                noUserItem.className = 'no-user-item';
+                noUserItem.textContent = 'Tidak ada pengguna lain';
+                userList.appendChild(noUserItem);
+                return;
+            }
+            
+            // Tambahkan setiap pengguna ke daftar
             snapshot.forEach(doc => {
                 const userData = doc.data();
                 
@@ -140,19 +189,32 @@ function loadUsers() {
                 const userItem = document.createElement('div');
                 userItem.className = 'user-item';
                 userItem.dataset.uid = userData.uid;
+                
+                // Pastikan URL avatar valid
+                const avatarUrl = userData.photoURL || (DEFAULT_AVATAR + '&name=' + encodeURIComponent(userData.displayName || 'User'));
+                
                 userItem.innerHTML = `
-                    <img src="${userData.photoURL || DEFAULT_AVATAR + '&name=' + encodeURIComponent(userData.displayName)}" alt="Avatar" class="user-item-avatar">
-                    <div class="user-item-name">${userData.displayName}</div>
+                    <img src="${avatarUrl}" alt="Avatar" class="user-item-avatar">
+                    <div class="user-item-name">${userData.displayName || 'Pengguna'}</div>
                 `;
                 
                 userItem.addEventListener('click', () => selectUser(userData));
                 userList.appendChild(userItem);
             });
+            
+            console.log('Daftar pengguna dimuat:', userList.children.length, 'pengguna');
+        }, error => {
+            console.error('Error loading users:', error);
         });
 }
 
 // Fungsi untuk memilih pengguna untuk chat
 function selectUser(user) {
+    if (!user || !user.uid) {
+        console.error('Data pengguna tidak valid:', user);
+        return;
+    }
+    
     // Hapus kelas active dari semua user item
     document.querySelectorAll('.user-item').forEach(item => {
         item.classList.remove('active');
@@ -164,15 +226,33 @@ function selectUser(user) {
         selectedItem.classList.add('active');
     }
     
+    // Simpan pengguna yang dipilih
     selectedUser = user;
-    receiverAvatar.src = user.photoURL || DEFAULT_AVATAR + '&name=' + encodeURIComponent(user.displayName);
-    receiverName.textContent = user.displayName;
-    messageInput.disabled = false;
-    sendButton.disabled = false;
+    
+    // Update UI
+    if (receiverAvatar) {
+        receiverAvatar.src = user.photoURL || (DEFAULT_AVATAR + '&name=' + encodeURIComponent(user.displayName || 'User'));
+    }
+    
+    if (receiverName) {
+        receiverName.textContent = user.displayName || 'Pengguna';
+    }
+    
+    // Aktifkan input pesan dan tombol kirim
+    if (messageInput) {
+        messageInput.disabled = false;
+        messageInput.focus(); // Fokus ke input pesan
+    }
+    
+    if (sendButton) {
+        sendButton.disabled = false;
+    }
     
     // Buat atau dapatkan ID chat
     const chatUsers = [currentUser.uid, user.uid].sort();
     currentChatId = chatUsers.join('_');
+    
+    console.log('Pengguna dipilih:', user.displayName, 'dengan ID chat:', currentChatId);
     
     // Load pesan
     loadMessages();
