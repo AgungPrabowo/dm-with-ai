@@ -172,7 +172,25 @@ body {
     object-fit: cover;
 }
 
+.user-item-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
 .user-item-name {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.user-status {
+    font-size: 12px;
+    color: #666;
+}
+
+.user-status.online {
+    color: #4CAF50;
     font-weight: 500;
 }
 
