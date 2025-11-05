@@ -9,9 +9,22 @@
       "firebase.json",
       ".firebaserc",
       ".git/**",
-      "**/.*",
-      "**/node_modules/**",
-      "public/**"
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "**/*.js",
+        "headers": [
+          {
+            "key": "Cross-Origin-Opener-Policy",
+            "value": "unsafe-none"
+          },
+          {
+            "key": "Cross-Origin-Embedder-Policy",
+            "value": "unsafe-none"
+          }
+        ]
+      }
     ]
   }
 }
